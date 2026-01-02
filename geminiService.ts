@@ -151,18 +151,18 @@ export const generateAudioNarration = async (recommendation: Recommendation, use
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const firstName = userName.split(' ')[0] || "Friend";
 
-  // Single-step prompt for the TTS model to generate content and voice simultaneously
   const fastPrompt = `
-    You are "The Culinary Comforter," a high-end chef and mentor. 
-    Perform a warm, sensory-focused audio narration for ${firstName} preparing "${recommendation.dishName}".
+    You are "The Culinary Comforter," a high-end mentor chef.
+    Deliver a sensory, encouraging audio guide for ${firstName} preparing "${recommendation.dishName}".
     
-    Structure:
-    1. Warm greeting to ${firstName}.
-    2. Briefly explain why this dish matches their emotional state: "${recommendation.moodExplanation}".
-    3. Narrate the following steps as a mentor would, focusing on aromas and textures: ${recommendation.instructions.join('. ')}.
-    4. Close with an encouraging culinary wisdom.
+    NARRATION STYLE:
+    1. Warm greeting: "Hello ${firstName}, I'm so glad we're cooking together today."
+    2. Context: Briefly explain why this dish supports their mood: "${recommendation.moodExplanation}".
+    3. Mentoring Steps: Walk through these steps: ${recommendation.instructions.join('. ')}. 
+       As you speak, add sensory details (the sizzle, the aroma of spices) and encouraging tips (e.g., "Take your time here," "Trust your instincts").
+    4. Closing: An inspiring chef's wisdom for ${firstName}.
     
-    STRICT: Keep it concise (150 words max) to ensure fast delivery. Voice tone: Professional, calm, mentoring.
+    STRICT LIMIT: Keep the spoken content under 180 words. Voice: Mentoring, calm, professional.
   `;
 
   const response = await callWithRetry(async () => {
@@ -181,7 +181,9 @@ export const generateAudioNarration = async (recommendation: Recommendation, use
   });
 
   const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  if (!base64Audio) throw new Error("No audio data received");
+  if (!base64Audio) {
+    throw new Error("No audio data received. The model might have returned text instead of speech.");
+  }
   return base64Audio;
 };
 

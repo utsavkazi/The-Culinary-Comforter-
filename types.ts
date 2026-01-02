@@ -18,6 +18,8 @@ export enum Budget {
 
 export interface User {
   fullName: string;
+  email: string;
+  password?: string;
   age: number;
   nationality: string;
   dietaryPreferences: string[];
@@ -37,4 +39,15 @@ export interface Recommendation {
   chefTip: string;
   imageUrl?: string;
   stepImages?: string[];
+}
+
+export interface CookbookRecipe {
+  id: string;
+  title: string;
+  author: string;
+  preview: string;
+  ingredients: string[];
+  instructions: string[];
+  page: number;
+  category: string;
 }
