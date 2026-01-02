@@ -17,7 +17,8 @@ async function callWithRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T
       return await fn();
     } catch (error: any) {
       lastError = error;
-      const isRateLimit = error?.message?.includes('429') || error?.status === 'RESOURCE_EXHAUSTED';
+      const errorMsg = error?.message || "";
+      const isRateLimit = errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED');
       if (isRateLimit && i < maxRetries - 1) {
         const waitTime = Math.pow(2, i) * 1000;
         await sleep(waitTime);
@@ -47,55 +48,71 @@ export const getChefRecommendation = async (
 
   const locationContext = user.location 
     ? `The user is currently at coordinates: Latitude ${user.location.latitude}, Longitude ${user.location.longitude}.`
-    : "Location data is not provided.";
+    : "Location data is currently unavailable, use global seasonal inspiration.";
 
   const prompt = `
     You are "The Culinary Comforter," a world-class chef who blends psychology, nutrition, and haute cuisine.
     
-    TASK: Recommend a personalized gourmet dish that fuses the user's HERITAGE with their CURRENT LOCALITY.
+    TASK: Recommend a personalized gourmet dish that fuses the user's nationality (${user.nationality}) with their current context.
     
     USER PROFILE:
     - Name: ${user.fullName}
     - Age: ${user.age}
-    - Nationality (The Soul): ${user.nationality}
-    - Current Location (The Source): ${locationContext}
+    - Current Context: ${locationContext}
     
-    CONSTRAINTS:
-    - Dietary: ${user.dietaryPreferences.length > 0 ? user.dietaryPreferences.join(", ") : "None"}
-    - Allergies: ${user.allergies || "None"}
-    - Mood: ${mood || "Refer to context"}
-    - Budget: ${budget}
-    - Time/Season: ${timeOfDay} / ${season}
-    - User Context: ${context || "Open inspiration"}
+    STRICT CONSTRAINTS (CRITICAL):
+    - Dietary Restrictions: ${user.dietaryPreferences.length > 0 ? user.dietaryPreferences.join(", ") : "None"}
+    - Allergies (NEVER USE THESE INGREDIENTS): ${user.allergies || "None"}
+    
+    CONTEXTUAL CONSTRAINTS:
+    - Mood/Vibe: ${mood || "Refer to context"}
+    - Budget Level: ${budget}
+    - Current Time/Season: ${timeOfDay} in ${season}
+    - Personal Story/Notes: ${context || "None"}
     
     CREATIVE DIRECTION:
-    The dish MUST be a sophisticated blend. If they are Italian but in New York, suggest a high-end fusion that respects their roots while using local inspiration.
+    Provide a sophisticated, gourmet recommendation that strictly adheres to the dietary and allergy constraints. Return strictly as a JSON object.
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          dishName: { type: Type.STRING },
-          energyMatch: { type: Type.STRING },
-          moodExplanation: { type: Type.STRING },
-          estimatedCost: { type: Type.STRING },
-          keyIngredients: { type: Type.ARRAY, items: { type: Type.STRING } },
-          instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
-          bestFor: { type: Type.STRING },
-          prepTime: { type: Type.STRING },
-          chefTip: { type: Type.STRING },
-        },
-        required: ["dishName", "energyMatch", "moodExplanation", "estimatedCost", "keyIngredients", "instructions", "bestFor", "prepTime", "chefTip"]
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            dishName: { type: Type.STRING },
+            energyMatch: { type: Type.STRING },
+            moodExplanation: { type: Type.STRING },
+            estimatedCost: { type: Type.STRING },
+            keyIngredients: { type: Type.ARRAY, items: { type: Type.STRING } },
+            instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
+            bestFor: { type: Type.STRING },
+            prepTime: { type: Type.STRING },
+            chefTip: { type: Type.STRING },
+          },
+          required: ["dishName", "energyMatch", "moodExplanation", "estimatedCost", "keyIngredients", "instructions", "bestFor", "prepTime", "chefTip"]
+        }
       }
-    }
-  });
+    });
 
-  return JSON.parse(response.text || "{}") as Recommendation;
+    const text = response.text;
+    if (!text) throw new Error("The chef is silent. (No content returned)");
+    
+    // Robust JSON extraction in case model returns text alongside JSON
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("The chef provided a recipe in an unreadable format.");
+    
+    return JSON.parse(jsonMatch[0]) as Recommendation;
+  } catch (error: any) {
+    console.error("Gemini API Error:", error);
+    if (error?.message?.includes('Safety')) {
+      throw new Error("This request touched upon sensitive culinary boundaries. Please try describing your mood differently.");
+    }
+    throw error;
+  }
 };
 
 /**
@@ -154,15 +171,7 @@ export const generateAudioNarration = async (recommendation: Recommendation, use
   const fastPrompt = `
     You are "The Culinary Comforter," a high-end mentor chef.
     Deliver a sensory, encouraging audio guide for ${firstName} preparing "${recommendation.dishName}".
-    
-    NARRATION STYLE:
-    1. Warm greeting: "Hello ${firstName}, I'm so glad we're cooking together today."
-    2. Context: Briefly explain why this dish supports their mood: "${recommendation.moodExplanation}".
-    3. Mentoring Steps: Walk through these steps: ${recommendation.instructions.join('. ')}. 
-       As you speak, add sensory details (the sizzle, the aroma of spices) and encouraging tips (e.g., "Take your time here," "Trust your instincts").
-    4. Closing: An inspiring chef's wisdom for ${firstName}.
-    
-    STRICT LIMIT: Keep the spoken content under 180 words. Voice: Mentoring, calm, professional.
+    Style: Warm, mentoring, professional. Keep it under 180 words.
   `;
 
   const response = await callWithRetry(async () => {
@@ -182,7 +191,7 @@ export const generateAudioNarration = async (recommendation: Recommendation, use
 
   const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   if (!base64Audio) {
-    throw new Error("No audio data received. The model might have returned text instead of speech.");
+    throw new Error("No audio data received.");
   }
   return base64Audio;
 };
