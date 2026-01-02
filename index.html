@@ -107,8 +107,8 @@
         pointer-events: none;
       }
       @keyframes gradient-y {
-        '0%, 100%': { 'background-size': '400% 400%', 'background-position': 'center top' },
-        '50%': { 'background-size': '200% 200%', 'background-position': 'center bottom' }
+        0%, 100% { background-size: 400% 400%; background-position: center top; }
+        50% { background-size: 200% 200%; background-position: center bottom; }
       }
       .animate-gradient {
         animation: gradient-y 15s ease infinite;
@@ -128,5 +128,6 @@
   </head>
   <body class="bg-chefGreen">
     <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
   </body>
 </html>
