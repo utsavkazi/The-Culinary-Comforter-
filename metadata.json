@@ -1,0 +1,7 @@
+{
+  "name": "The Culinary Comforter",
+  "description": "A sophisticated AI-powered personal chef that recommends recipes based on your emotional state, budget, and local time, blending psychology with haute cuisine.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

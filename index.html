@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Culinary Comforter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              chefGreen: {
+                DEFAULT: '#016B61',
+                dark: '#0a1f1d',
+              },
+            },
+            animation: {
+              'spin-slow': 'spin 20s linear infinite',
+              'spin-reverse-slow': 'spin-reverse 25s linear infinite',
+              'simmer': 'simmer 3s ease-in-out infinite',
+              'steam': 'steam 2s ease-out infinite',
+              'float': 'float 15s ease-in-out infinite',
+              'float-delayed': 'float 18s ease-in-out infinite 2s',
+            },
+            keyframes: {
+              'spin-reverse': {
+                from: { transform: 'rotate(360deg)' },
+                to: { transform: 'rotate(0deg)' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0) translateX(0)' },
+                '25%': { transform: 'translateY(-20px) translateX(10px)' },
+                '50%': { transform: 'translateY(10px) translateX(-15px)' },
+                '75%': { transform: 'translateY(-15px) translateX(5px)' },
+              },
+              simmer: {
+                '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 0px rgba(1, 107, 97, 0)' },
+                '50%': { transform: 'scale(1.02)', boxShadow: '0 0 20px rgba(1, 107, 97, 0.4)' },
+              },
+              steam: {
+                '0%': { transform: 'translateY(0) scaleX(1)', opacity: '0' },
+                '15%': { opacity: '0.6' },
+                '50%': { transform: 'translateY(-10px) scaleX(1.2)', opacity: '0.3' },
+                '100%': { transform: 'translateY(-20px) scaleX(1.5)', opacity: '0' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Montserrat', sans-serif;
+        transition: background-color 0.3s ease;
+      }
+      .dark body {
+        background-color: #0a1f1d;
+      }
+      h1, h2, h3, h4, .serif {
+        font-family: 'Cormorant Garamond', serif;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+      }
+      /* Smooth transitions for theme switching */
+      * {
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.1s ease;
+      }
+      .steam-line {
+        position: absolute;
+        top: -10px;
+        width: 2px;
+        height: 10px;
+        background: linear-gradient(to top, rgba(255,255,255,0.8), transparent);
+        border-radius: 50%;
+      }
+      .dish-blob {
+        position: absolute;
+        width: 280px;
+        height: 280px;
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+        overflow: hidden;
+        filter: blur(2px) brightness(0.7);
+        opacity: 0.35;
+        box-shadow: 0 0 40px rgba(0,0,0,0.3);
+      }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+      }
+    }
+    </script>
+  </head>
+  <body class="bg-chefGreen">
+    <div id="root"></div>
+  </body>
+</html>
