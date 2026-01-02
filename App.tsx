@@ -185,7 +185,13 @@ export default function App() {
   const [context, setContext] = useState('');
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  // API Key Check and initial error state
+  const isApiKeyMissing = !process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const [error, setError] = useState<string | null>(
+    isApiKeyMissing ? "The chef's tools (API Key) are missing. Please configure NEXT_PUBLIC_GEMINI_API_KEY to begin." : null
+  );
+
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -226,7 +232,15 @@ export default function App() {
     localStorage.setItem(SAVED_RECIPES_KEY, JSON.stringify(savedRecipes));
   }, [savedRecipes]);
 
+  // Ensure Kitchen Notice hides if key is detected (in case of dynamic injection/updates)
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_GEMINI_API_KEY && error?.includes("API Key")) {
+      setError(null);
+    }
+  }, [process.env.NEXT_PUBLIC_GEMINI_API_KEY, error]);
+
   const handleGenerate = async () => {
+    if (isApiKeyMissing) return;
     setError(null);
     setLoading(true);
     try {
@@ -306,6 +320,7 @@ export default function App() {
   };
 
   const startGuideForCookbook = async (recipe: CookbookRecipe) => {
+    if (isApiKeyMissing) return;
     setCompletedSteps([]);
     setView('guide');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -482,7 +497,11 @@ export default function App() {
                 </div>
               </div>
 
-              <button onClick={handleGenerate} disabled={loading} className="w-full bg-white text-[#016B61] py-6 rounded-[2rem] font-bold text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50 group">
+              <button 
+                onClick={handleGenerate} 
+                disabled={loading || isApiKeyMissing} 
+                className="w-full bg-white text-[#016B61] py-6 rounded-[2rem] font-bold text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50 group"
+              >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />}
                 Compose My Meal
               </button>
@@ -564,7 +583,8 @@ export default function App() {
               <div className="pt-20 border-t border-white/5 flex flex-col items-center">
                  <button 
                   onClick={() => startGuideForCookbook(selectedCookbookRecipe)}
-                  className="group relative flex items-center gap-6 px-16 py-8 bg-white hover:bg-chefGreen text-chefGreen hover:text-white rounded-[3rem] shadow-3xl transition-all hover:scale-105 active:scale-95 overflow-hidden ring-4 ring-white/20"
+                  disabled={isApiKeyMissing}
+                  className="group relative flex items-center gap-6 px-16 py-8 bg-white hover:bg-chefGreen text-chefGreen hover:text-white rounded-[3rem] shadow-3xl transition-all hover:scale-105 active:scale-95 overflow-hidden ring-4 ring-white/20 disabled:opacity-50"
                  >
                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                    <Compass className="w-10 h-10 group-hover:rotate-45 transition-transform duration-700" />
