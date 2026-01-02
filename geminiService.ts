@@ -39,8 +39,7 @@ export const getChefRecommendation = async (
   user: User,
   context?: string
 ): Promise<Recommendation> => {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const now = new Date();
   const hours = now.getHours();
@@ -119,8 +118,7 @@ export const getChefRecommendation = async (
  * Generates the main hero image for a dish.
  */
 export const generateMainImage = async (dishName: string): Promise<string> => {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     return await callWithRetry(async () => {
       const resp = await ai.models.generateContent({
@@ -143,8 +141,7 @@ export const generateMainImage = async (dishName: string): Promise<string> => {
  * Generates an image for a specific cooking step.
  */
 export const generateStepImage = async (step: string, dishName: string): Promise<string> => {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     return await callWithRetry(async () => {
       const resp = await ai.models.generateContent({
@@ -167,8 +164,7 @@ export const generateStepImage = async (step: string, dishName: string): Promise
  * Generates a mentored audio narration in a single high-speed step.
  */
 export const generateAudioNarration = async (recommendation: Recommendation, userName: string): Promise<string> => {
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const firstName = userName.split(' ')[0] || "Friend";
 
   const fastPrompt = `

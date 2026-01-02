@@ -45,7 +45,8 @@ import {
   ScrollText,
   Stamp,
   Compass,
-  Trophy
+  Trophy,
+  Search
 } from 'lucide-react';
 
 // --- Utility Components ---
@@ -185,15 +186,7 @@ export default function App() {
   const [context, setContext] = useState('');
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [loading, setLoading] = useState(false);
-  
-  // Strict API Key validation for NEXT_PUBLIC_GEMINI_API_KEY
-  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-  const isApiKeyMissing = !(apiKey && (apiKey.length > 5 || apiKey.startsWith('AIza')));
-
-  const [error, setError] = useState<string | null>(
-    isApiKeyMissing ? "The chef's tools (API Key) are missing. Please configure NEXT_PUBLIC_GEMINI_API_KEY to begin." : null
-  );
-
+  const [error, setError] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -234,15 +227,7 @@ export default function App() {
     localStorage.setItem(SAVED_RECIPES_KEY, JSON.stringify(savedRecipes));
   }, [savedRecipes]);
 
-  // Bypass warnings immediately if key is found
-  useEffect(() => {
-    if (!isApiKeyMissing && error?.includes("API Key")) {
-      setError(null);
-    }
-  }, [isApiKeyMissing, error]);
-
   const handleGenerate = async () => {
-    if (isApiKeyMissing) return;
     setError(null);
     setLoading(true);
     try {
@@ -322,7 +307,6 @@ export default function App() {
   };
 
   const startGuideForCookbook = async (recipe: CookbookRecipe) => {
-    if (isApiKeyMissing) return;
     setCompletedSteps([]);
     setView('guide');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -348,7 +332,7 @@ export default function App() {
 
   const filteredCookbook = useMemo(() => COOKBOOK_RECIPES.filter(r => 
     (selectedCategory === 'All' || r.category === selectedCategory) &&
-    (r.title.toLowerCase().includes(cookbookSearch.toLowerCase()))
+    (r.title.toLowerCase().includes(cookbookSearch.toLowerCase()) || r.preview.toLowerCase().includes(cookbookSearch.toLowerCase()))
   ), [cookbookSearch, selectedCategory]);
 
   const loadSavedRecipe = (recipe: SavedRecipe) => {
@@ -384,6 +368,9 @@ export default function App() {
     return null;
   }, [view, recommendation, selectedCookbookRecipe, cookbookStepImages]);
 
+  // Common glassmorphism class for inputs
+  const inputClass = "w-full p-6 rounded-3xl bg-white/5 backdrop-blur-md text-white placeholder:text-white/20 border border-white/10 outline-none transition-all focus:border-chefGreen/50 focus:ring-2 focus:ring-chefGreen/20 focus:bg-white/10";
+
   return (
     <div className="min-h-screen bg-chefGreen dark:bg-chefGreen-dark transition-colors duration-500 pb-24 overflow-x-hidden">
       <LoadingOverlay isVisible={loading} />
@@ -400,7 +387,6 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Slide-out Menu */}
       <div className={`fixed inset-0 z-[100] transition-all duration-500 ${isMenuOpen ? 'visible' : 'invisible'}`}>
         <div onClick={() => setIsMenuOpen(false)} className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0'}`}></div>
         <div className={`absolute top-0 right-0 h-full w-[260px] bg-stone-900/98 backdrop-blur-3xl shadow-[-20px_0_50px_rgba(0,0,0,0.5)] border-l border-white/10 transition-transform duration-500 transform ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} flex flex-col`}>
@@ -424,13 +410,6 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-6 sm:px-10 mt-36 sm:mt-40">
         {view === 'home' ? (
           <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-4xl mx-auto space-y-12 pb-20">
-            {/* Debug Message */}
-            <div className="text-center mb-4">
-              <p className="text-[10px] font-mono text-white/20 uppercase tracking-widest">
-                Debug: Key is {apiKey ? 'found' : 'missing'}
-              </p>
-            </div>
-
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-[2rem] flex items-center gap-4 text-red-200">
                 <AlertTriangle className="w-6 h-6 text-red-500 shrink-0" />
@@ -445,7 +424,12 @@ export default function App() {
               <div className="space-y-10">
                 <div className="space-y-4">
                   <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 flex items-center gap-3"><MessageSquareQuote className="w-4 h-4 text-chefGreen" /> Inner Narrative</h3>
-                  <textarea value={context} onChange={(e) => setContext(e.target.value)} placeholder="Tell me of your day..." className="w-full h-32 p-6 rounded-3xl bg-black/20 text-white placeholder:text-white/15 border border-white/10 outline-none transition-all resize-none text-lg serif italic" />
+                  <textarea 
+                    value={context} 
+                    onChange={(e) => setContext(e.target.value)} 
+                    placeholder="Tell me of your day..." 
+                    className={`${inputClass} h-32 resize-none text-lg serif italic`}
+                  />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -453,7 +437,7 @@ export default function App() {
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 flex items-center gap-3"><Smile className="w-4 h-4 text-chefGreen" /> Vibration</h3>
                     <div className="grid grid-cols-2 gap-3">
                       {MOOD_OPTIONS.map((opt) => (
-                        <button key={opt.value} onClick={() => setMood(opt.value)} className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${mood === opt.value ? 'bg-white text-[#016B61] border-transparent shadow-xl scale-105' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}`}>
+                        <button key={opt.value} onClick={() => setMood(opt.value)} className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${mood === opt.value ? 'bg-white text-[#016B61] border-transparent shadow-xl scale-105' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 backdrop-blur-sm'}`}>
                           <span className="mb-1">{opt.icon}</span><span className="text-[8px] font-bold uppercase tracking-widest">{opt.label}</span>
                         </button>
                       ))}
@@ -463,7 +447,7 @@ export default function App() {
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 flex items-center gap-3"><DollarSign className="w-4 h-4 text-chefGreen" /> Aura</h3>
                     <div className="grid grid-cols-2 gap-3">
                       {BUDGET_OPTIONS.map((opt) => (
-                        <button key={opt.value} onClick={() => setBudget(opt.value)} className={`py-5 rounded-2xl border transition-all text-[8px] font-bold uppercase tracking-[0.2em] ${budget === opt.value ? 'bg-white text-[#016B61] border-transparent shadow-xl scale-105' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}`}>{opt.value}</button>
+                        <button key={opt.value} onClick={() => setBudget(opt.value)} className={`py-5 rounded-2xl border transition-all text-[8px] font-bold uppercase tracking-[0.2em] ${budget === opt.value ? 'bg-white text-[#016B61] border-transparent shadow-xl scale-105' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 backdrop-blur-sm'}`}>{opt.value}</button>
                       ))}
                     </div>
                   </div>
@@ -479,7 +463,7 @@ export default function App() {
                         <button 
                           key={opt} 
                           onClick={() => toggleDietary(opt)} 
-                          className={`px-4 py-2 rounded-full border text-[8px] font-bold uppercase tracking-widest transition-all ${dietary.includes(opt) ? 'bg-chefGreen text-white border-transparent shadow-glow' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}`}
+                          className={`px-4 py-2 rounded-full border text-[8px] font-bold uppercase tracking-widest transition-all ${dietary.includes(opt) ? 'bg-chefGreen text-white border-transparent shadow-glow' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 backdrop-blur-sm'}`}
                         >
                           {opt}
                         </button>
@@ -491,13 +475,13 @@ export default function App() {
                       <ShieldAlert className="w-4 h-4 text-chefGreen" /> Vital Protections (Allergies)
                     </h3>
                     <div className="relative">
-                      <Ban className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                      <Ban className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-chefGreen/40" />
                       <input 
                         type="text" 
                         value={allergies} 
                         onChange={(e) => setAllergies(e.target.value)} 
                         placeholder="List any sensitivities..." 
-                        className="w-full pl-12 pr-6 py-4 rounded-2xl bg-black/20 text-white placeholder:text-white/15 border border-white/10 focus:border-chefGreen outline-none transition-all text-sm italic serif"
+                        className={`${inputClass} pl-14 py-4 text-sm italic serif`}
                       />
                     </div>
                   </div>
@@ -506,7 +490,7 @@ export default function App() {
 
               <button 
                 onClick={handleGenerate} 
-                disabled={loading || isApiKeyMissing} 
+                disabled={loading} 
                 className="w-full bg-white text-[#016B61] py-6 rounded-[2rem] font-bold text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50 group"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />}
@@ -517,16 +501,36 @@ export default function App() {
         ) : view === 'cookbook' ? (
           <div className="animate-in fade-in slide-in-from-right-8 duration-700 max-w-6xl mx-auto pb-40 space-y-12">
             <StickyBackButton onClick={() => setView('home')} />
-            <div className="flex flex-col md:flex-row justify-between items-end gap-8 border-b border-white/5 pb-10">
-              <h2 className="text-4xl sm:text-6xl font-bold text-white serif italic">The Chef's Secret</h2>
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                {['All', ...new Set(COOKBOOK_RECIPES.map(r => r.category))].map(cat => (
-                  <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-6 py-3 rounded-2xl text-[10px] font-bold uppercase border whitespace-nowrap transition-all ${selectedCategory === cat ? 'bg-white text-chefGreen border-white shadow-xl' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'}`}>{cat}</button>
-                ))}
+            
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8 border-b border-white/5 pb-10">
+              <div className="space-y-2">
+                <h2 className="text-4xl sm:text-6xl font-bold text-white serif italic">The Chef's Secret</h2>
+                <p className="text-white/30 text-xs font-medium uppercase tracking-[0.3em]">Curated Manuscripts from the archives</p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-center">
+                 {/* New Search Input */}
+                 <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-chefGreen/60" />
+                    <input 
+                      type="text"
+                      placeholder="Search archive..."
+                      value={cookbookSearch}
+                      onChange={(e) => setCookbookSearch(e.target.value)}
+                      className={`${inputClass} pl-12 py-3 text-xs tracking-wider rounded-2xl`}
+                    />
+                 </div>
+                 
+                 <div className="flex gap-2 overflow-x-auto no-scrollbar py-2 w-full sm:w-auto">
+                    {['All', ...new Set(COOKBOOK_RECIPES.map(r => r.category))].map(cat => (
+                      <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-5 py-2.5 rounded-2xl text-[9px] font-bold uppercase border whitespace-nowrap transition-all ${selectedCategory === cat ? 'bg-white text-chefGreen border-white shadow-xl' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 backdrop-blur-sm'}`}>{cat}</button>
+                    ))}
+                 </div>
               </div>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {filteredCookbook.map(recipe => (
+              {filteredCookbook.length > 0 ? filteredCookbook.map(recipe => (
                 <div 
                   key={recipe.id} 
                   onClick={() => { setSelectedCookbookRecipe(recipe); setView('cookbook-detail'); }} 
@@ -534,18 +538,20 @@ export default function App() {
                 >
                   <button 
                     onClick={(e) => { e.stopPropagation(); toggleSaveRecipe(recipe); }}
-                    className={`absolute top-8 right-8 p-3 rounded-full border transition-all active:scale-90 ${isRecipeSaved(recipe.title) ? 'bg-chefGreen text-white border-chefGreen shadow-glow' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/20'}`}
+                    className={`absolute top-8 right-8 p-3 rounded-full border transition-all active:scale-90 ${isRecipeSaved(recipe.title) ? 'bg-chefGreen text-white border-chefGreen shadow-glow' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/20 backdrop-blur-md'}`}
                   >
                     <Heart className={`w-5 h-5 ${isRecipeSaved(recipe.title) ? 'fill-white' : ''}`} />
                   </button>
                   <Stamp className="w-7 h-7 text-white/20 group-hover:text-chefGreen group-hover:scale-110 transition-all mb-6" />
                   <h3 className="text-3xl font-bold text-white serif italic mb-3 leading-tight">{recipe.title}</h3>
-                  <p className="text-white/40 text-base italic serif leading-relaxed flex-1">"{recipe.preview}"</p>
+                  <p className="text-white/40 text-base italic serif leading-relaxed flex-1 line-clamp-3">"{recipe.preview}"</p>
                   <div className="mt-8 pt-8 border-t border-white/5 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-chefGreen opacity-0 group-hover:opacity-100 transition-opacity">
                     View Manuscript <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="col-span-full py-20 text-center opacity-30 italic serif text-2xl text-white">No manuscripts found matching your search.</div>
+              )}
             </div>
           </div>
         ) : view === 'cookbook-detail' && selectedCookbookRecipe ? (
@@ -555,7 +561,7 @@ export default function App() {
               <div className="text-center space-y-6 relative">
                 <button 
                   onClick={() => toggleSaveRecipe(selectedCookbookRecipe)}
-                  className={`absolute top-0 right-0 p-5 rounded-full border transition-all active:scale-90 shadow-2xl ${isRecipeSaved(selectedCookbookRecipe.title) ? 'bg-chefGreen text-white border-chefGreen shadow-glow' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}
+                  className={`absolute top-0 right-0 p-5 rounded-full border transition-all active:scale-90 shadow-2xl ${isRecipeSaved(selectedCookbookRecipe.title) ? 'bg-chefGreen text-white border-chefGreen shadow-glow' : 'bg-white/10 text-white border-white/20 hover:bg-white/20 backdrop-blur-md'}`}
                 >
                   <Heart className={`w-7 h-7 ${isRecipeSaved(selectedCookbookRecipe.title) ? 'fill-white' : ''}`} />
                 </button>
@@ -589,8 +595,7 @@ export default function App() {
               <div className="pt-20 border-t border-white/5 flex flex-col items-center">
                  <button 
                   onClick={() => startGuideForCookbook(selectedCookbookRecipe)}
-                  disabled={isApiKeyMissing}
-                  className="group relative flex items-center gap-6 px-16 py-8 bg-white hover:bg-chefGreen text-chefGreen hover:text-white rounded-[3rem] shadow-3xl transition-all hover:scale-105 active:scale-95 overflow-hidden ring-4 ring-white/20 disabled:opacity-50"
+                  className="group relative flex items-center gap-6 px-16 py-8 bg-white hover:bg-chefGreen text-chefGreen hover:text-white rounded-[3rem] shadow-3xl transition-all hover:scale-105 active:scale-95 overflow-hidden ring-4 ring-white/20"
                  >
                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                    <Compass className="w-10 h-10 group-hover:rotate-45 transition-transform duration-700" />
@@ -732,7 +737,7 @@ export default function App() {
                     </div>
                     <button 
                       onClick={(e) => { e.stopPropagation(); toggleSaveRecipe(recommendation); }} 
-                      className={`p-6 rounded-full border transition-all active:scale-90 shadow-2xl ${isRecipeSaved(recommendation.dishName) ? 'bg-chefGreen text-white border-chefGreen shadow-glow' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}
+                      className={`p-6 rounded-full border transition-all active:scale-90 shadow-2xl ${isRecipeSaved(recommendation.dishName) ? 'bg-chefGreen text-white border-chefGreen shadow-glow' : 'bg-white/10 text-white border-white/20 hover:bg-white/20 backdrop-blur-md'}`}
                     >
                       <Heart className={`w-8 h-8 ${isRecipeSaved(recommendation.dishName) ? 'fill-white' : ''}`} />
                     </button>
