@@ -20,29 +20,20 @@ import {
   MessageSquareQuote,
   Moon,
   Sun,
-  Share2,
   Check,
   ChevronLeft,
-  Volume2,
-  Pause,
   Leaf,
-  Play,
   Bookmark,
   Trash2,
   CheckCircle2,
   Circle,
-  ExternalLink,
-  Plus,
   Menu,
   X,
   ChevronRight,
   Library,
-  History,
-  User as UserIcon,
   ShieldAlert,
   Ban,
   AlertTriangle,
-  ScrollText,
   Stamp,
   Compass,
   Trophy,
@@ -166,7 +157,6 @@ const DIETARY_OPTIONS = [
   "Vegan", "Vegetarian", "Pescetarian", "Gluten-Free", "Dairy-Free", "Keto", "Paleo"
 ];
 
-// Type to represent saved items which can be AI generated or Cookbook items
 type SavedRecipe = Recommendation | CookbookRecipe;
 
 export default function App() {
@@ -369,7 +359,7 @@ export default function App() {
   }, [view, recommendation, selectedCookbookRecipe, cookbookStepImages]);
 
   // Common glassmorphism class for inputs
-  const inputClass = "w-full p-6 rounded-3xl bg-white/5 backdrop-blur-md text-white placeholder:text-white/20 border border-white/10 outline-none transition-all focus:border-chefGreen/50 focus:ring-2 focus:ring-chefGreen/20 focus:bg-white/10";
+  const inputClass = "w-full p-6 rounded-3xl bg-white/5 backdrop-blur-[12px] text-white placeholder:text-white/20 border border-white/10 outline-none transition-all duration-300 focus:border-chefGreen focus:ring-4 focus:ring-chefGreen/10 focus:bg-white/10 shadow-inner";
 
   return (
     <div className="min-h-screen bg-chefGreen dark:bg-chefGreen-dark transition-colors duration-500 pb-24 overflow-x-hidden">
@@ -437,7 +427,7 @@ export default function App() {
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 flex items-center gap-3"><Smile className="w-4 h-4 text-chefGreen" /> Vibration</h3>
                     <div className="grid grid-cols-2 gap-3">
                       {MOOD_OPTIONS.map((opt) => (
-                        <button key={opt.value} onClick={() => setMood(opt.value)} className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${mood === opt.value ? 'bg-white text-[#016B61] border-transparent shadow-xl scale-105' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 backdrop-blur-sm'}`}>
+                        <button key={opt.value} onClick={() => setMood(opt.value)} className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${mood === opt.value ? 'bg-white text-chefGreen border-transparent shadow-xl scale-105' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 backdrop-blur-sm'}`}>
                           <span className="mb-1">{opt.icon}</span><span className="text-[8px] font-bold uppercase tracking-widest">{opt.label}</span>
                         </button>
                       ))}
@@ -447,7 +437,7 @@ export default function App() {
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 flex items-center gap-3"><DollarSign className="w-4 h-4 text-chefGreen" /> Aura</h3>
                     <div className="grid grid-cols-2 gap-3">
                       {BUDGET_OPTIONS.map((opt) => (
-                        <button key={opt.value} onClick={() => setBudget(opt.value)} className={`py-5 rounded-2xl border transition-all text-[8px] font-bold uppercase tracking-[0.2em] ${budget === opt.value ? 'bg-white text-[#016B61] border-transparent shadow-xl scale-105' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 backdrop-blur-sm'}`}>{opt.value}</button>
+                        <button key={opt.value} onClick={() => setBudget(opt.value)} className={`py-5 rounded-2xl border transition-all text-[8px] font-bold uppercase tracking-[0.2em] ${budget === opt.value ? 'bg-white text-chefGreen border-transparent shadow-xl scale-105' : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 backdrop-blur-sm'}`}>{opt.value}</button>
                       ))}
                     </div>
                   </div>
@@ -474,8 +464,8 @@ export default function App() {
                     <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/30 flex items-center gap-3">
                       <ShieldAlert className="w-4 h-4 text-chefGreen" /> Vital Protections (Allergies)
                     </h3>
-                    <div className="relative">
-                      <Ban className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-chefGreen/40" />
+                    <div className="relative group">
+                      <Ban className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-chefGreen/40 group-focus-within:text-chefGreen transition-colors" />
                       <input 
                         type="text" 
                         value={allergies} 
@@ -491,7 +481,7 @@ export default function App() {
               <button 
                 onClick={handleGenerate} 
                 disabled={loading} 
-                className="w-full bg-white text-[#016B61] py-6 rounded-[2rem] font-bold text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50 group"
+                className="w-full bg-white text-chefGreen py-6 rounded-[2rem] font-bold text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50 group border border-white/10"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />}
                 Compose My Meal
@@ -509,15 +499,14 @@ export default function App() {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-center">
-                 {/* New Search Input */}
-                 <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-chefGreen/60" />
+                 <div className="relative w-full sm:w-64 group">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-chefGreen/60 group-focus-within:text-chefGreen transition-colors" />
                     <input 
                       type="text"
                       placeholder="Search archive..."
                       value={cookbookSearch}
                       onChange={(e) => setCookbookSearch(e.target.value)}
-                      className={`${inputClass} pl-12 py-3 text-xs tracking-wider rounded-2xl`}
+                      className={`${inputClass} pl-12 py-3.5 text-xs tracking-wider rounded-2xl`}
                     />
                  </div>
                  
