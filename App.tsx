@@ -186,8 +186,10 @@ export default function App() {
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [loading, setLoading] = useState(false);
   
-  // API Key Check and initial error state
-  const isApiKeyMissing = !process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  // Strict API Key validation for NEXT_PUBLIC_GEMINI_API_KEY
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const isApiKeyMissing = !(apiKey && (apiKey.length > 5 || apiKey.startsWith('AIza')));
+
   const [error, setError] = useState<string | null>(
     isApiKeyMissing ? "The chef's tools (API Key) are missing. Please configure NEXT_PUBLIC_GEMINI_API_KEY to begin." : null
   );
@@ -232,12 +234,12 @@ export default function App() {
     localStorage.setItem(SAVED_RECIPES_KEY, JSON.stringify(savedRecipes));
   }, [savedRecipes]);
 
-  // Ensure Kitchen Notice hides if key is detected (in case of dynamic injection/updates)
+  // Bypass warnings immediately if key is found
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_GEMINI_API_KEY && error?.includes("API Key")) {
+    if (!isApiKeyMissing && error?.includes("API Key")) {
       setError(null);
     }
-  }, [process.env.NEXT_PUBLIC_GEMINI_API_KEY, error]);
+  }, [isApiKeyMissing, error]);
 
   const handleGenerate = async () => {
     if (isApiKeyMissing) return;
@@ -325,7 +327,6 @@ export default function App() {
     setView('guide');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // Lazy generate step images for cookbook if missing to provide "image guidance"
     if (!cookbookStepImages[recipe.id]) {
       const placeholders = new Array(recipe.instructions.length).fill("");
       setCookbookStepImages(prev => ({ ...prev, [recipe.id]: placeholders }));
@@ -387,7 +388,6 @@ export default function App() {
     <div className="min-h-screen bg-chefGreen dark:bg-chefGreen-dark transition-colors duration-500 pb-24 overflow-x-hidden">
       <LoadingOverlay isVisible={loading} />
       
-      {/* Updated Header with Glassmorphism, 10px blur, and thin border */}
       <nav className="fixed top-0 left-0 right-0 z-[60] bg-chefGreen/60 dark:bg-chefGreen-dark/60 backdrop-blur-[10px] border-b border-white/10 py-5 sm:py-6 px-6 sm:px-10 shadow-xl transition-all duration-500">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setView('home')}>
@@ -424,6 +424,13 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-6 sm:px-10 mt-36 sm:mt-40">
         {view === 'home' ? (
           <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-4xl mx-auto space-y-12 pb-20">
+            {/* Debug Message */}
+            <div className="text-center mb-4">
+              <p className="text-[10px] font-mono text-white/20 uppercase tracking-widest">
+                Debug: Key is {apiKey ? 'found' : 'missing'}
+              </p>
+            </div>
+
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-[2rem] flex items-center gap-4 text-red-200">
                 <AlertTriangle className="w-6 h-6 text-red-500 shrink-0" />
@@ -579,7 +586,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Added Guide Me Through button at bottom of cookbook detail section */}
               <div className="pt-20 border-t border-white/5 flex flex-col items-center">
                  <button 
                   onClick={() => startGuideForCookbook(selectedCookbookRecipe)}

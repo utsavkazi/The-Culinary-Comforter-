@@ -39,7 +39,8 @@ export const getChefRecommendation = async (
   user: User,
   context?: string
 ): Promise<Recommendation> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey });
   
   const now = new Date();
   const hours = now.getHours();
@@ -101,7 +102,6 @@ export const getChefRecommendation = async (
     const text = response.text;
     if (!text) throw new Error("The chef is silent. (No content returned)");
     
-    // Robust JSON extraction in case model returns text alongside JSON
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("The chef provided a recipe in an unreadable format.");
     
@@ -119,7 +119,8 @@ export const getChefRecommendation = async (
  * Generates the main hero image for a dish.
  */
 export const generateMainImage = async (dishName: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey });
   try {
     return await callWithRetry(async () => {
       const resp = await ai.models.generateContent({
@@ -142,7 +143,8 @@ export const generateMainImage = async (dishName: string): Promise<string> => {
  * Generates an image for a specific cooking step.
  */
 export const generateStepImage = async (step: string, dishName: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey });
   try {
     return await callWithRetry(async () => {
       const resp = await ai.models.generateContent({
@@ -165,7 +167,8 @@ export const generateStepImage = async (step: string, dishName: string): Promise
  * Generates a mentored audio narration in a single high-speed step.
  */
 export const generateAudioNarration = async (recommendation: Recommendation, userName: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+  const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey });
   const firstName = userName.split(' ')[0] || "Friend";
 
   const fastPrompt = `
